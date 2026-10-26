@@ -13,6 +13,12 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 from src.config import CONFIG
 
+def _has_aws_credentials() -> bool:
+    return bool(
+        os.environ.get("AWS_ACCESS_KEY_ID") 
+        or os.path.exists(os.path.expanduser("~/.aws/credentials"))
+    )
+
 class SafetyActionTools:
     """Mock/Live Tools executable by the Autonomous Agent."""
     
@@ -28,20 +34,22 @@ class SafetyActionTools:
 
     @staticmethod
     def log_incident_s3(incident_payload: Dict[str, Any], bucket: str = "safesight-safety-audits") -> Dict[str, Any]:
-        # Tries live S3 or falls back to simulated secure store
         timestamp_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
         key = f"incidents/{incident_payload.get('zone_name', 'unknown')}/{timestamp_str}.json"
         
-        try:
-            s3 = boto3.client('s3', region_name=CONFIG.aws_region)
-            s3.put_object(
-                Bucket=bucket,
-                Key=key,
-                Body=json.dumps(incident_payload),
-                ContentType="application/json"
-            )
-            s3_status = "UPLOADED_TO_AWS_S3"
-        except Exception:
+        if _has_aws_credentials():
+            try:
+                s3 = boto3.client('s3', region_name=CONFIG.aws_region)
+                s3.put_object(
+                    Bucket=bucket,
+                    Key=key,
+                    Body=json.dumps(incident_payload),
+                    ContentType="application/json"
+                )
+                s3_status = "UPLOADED_TO_AWS_S3"
+            except Exception:
+                s3_status = "LOCAL_BUFFER_EMULATED (AWS S3 target ready)"
+        else:
             s3_status = "LOCAL_BUFFER_EMULATED (AWS S3 target ready)"
 
         return {
@@ -98,6 +106,9 @@ class AgenticVisionEngine:
         self._init_bedrock()
 
     def _init_bedrock(self):
+        if not _has_aws_credentials():
+            self.bedrock_client = None
+            return
         try:
             self.bedrock_client = boto3.client('bedrock-runtime', region_name=self.region)
         except (NoCredentialsError, Exception):
