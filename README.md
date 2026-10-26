@@ -7,6 +7,8 @@
 [![Streamlit](https://img.shields.io/badge/Dashboard-Streamlit-FF4B4B?logo=streamlit)](https://streamlit.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+![SafeSight AI Banner](assets/devpost_hero_cover.jpg)
+
 ---
 
 ## 📌 Executive Summary
@@ -73,7 +75,7 @@ flowchart TD
 
 ### 1. Clone & Set Up Environment
 ```bash
-git clone https://github.com/your-username/safesight-ai.git
+git clone https://github.com/farzanni/safesight-ai.git
 cd safesight-ai
 
 # Activate virtual environment
